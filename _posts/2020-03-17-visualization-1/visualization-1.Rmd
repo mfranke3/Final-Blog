@@ -1,0 +1,121 @@
+---
+title: "Visualization 1"
+description: |
+  Average star rating mapped by state & county.
+author:
+  - name: Mike Frankel
+    url: https://github.com/mfranke3
+date: 03-17-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+My first idea for a visualization was to show the average star rating by state.  I expected this to be useful to policy makers, hospitals, and patients alike, as they compare their state against others in terms of hospital rating.  For example, if any of the three audience categories listed live in a low-rating state, they might consider working to improve their state's standing in some way, or for the individual patient, consider seeking healthcare elsewhere.  If I'm getting ready to retire at age 65, perhaps I want to relocate to a state with higher hospital ratings.
+
+### Getting started
+Following are the libraries and data file I loaded to begin work on this project.  Also included are the changes done to the data once imported:
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(janitor)
+library(scales)
+library(colorspace)
+library(devtools)
+library(colorblindr)
+library(stringr)
+library(maps)
+library(ggthemes)
+library(mapproj)
+library(reshape2)
+library(socviz)
+
+
+data <- read_csv("SummaryStarRating.csv")
+
+data1 <- data %>% group_by(StateName) %>% 
+  summarize(mean_rat = mean(PatientSurveyStarRating))
+
+data1b <- data %>% group_by(County, State) %>%
+  summarize(mean_rat2 = mean(PatientSurveyStarRating)) %>%
+  mutate(name = County) %>%
+  mutate(state = State)
+
+```
+
+The SummaryStarRating file contains the five-star rating (scaled from 1 to 5) or all hospitals in the United States.  Scoped out are hospitals in U.S. territories.  Also included for ease of processing are columns with the state and county for each hospital (displayed by row).
+
+### Plot 1
+The first visualization is a simple bar graph as follows:
+
+```{r}
+
+ggplot(data1, aes(StateName, mean_rat)) +
+  geom_col() +
+  coord_flip()
+
+```
+
+There is a lot wrong with this first file.  While the average star rating by state is displayed in the bar graph, it leaves a lot to be desired in terms of comparison and interpretability.  One can generally locate where their state falls in the list, but a bar graph is not an optimal way to display this data.  As such, for the second plot, I decided to display the data in a state map.
+
+### Plot 2
+The second version of this visualization is the state map shown below, leveraging joins and the maps, ggthemes, mapproj, and reshape2 libraries, with a special thanks to socviz.co/maps.html for the tutorial on how to build this:
+
+```{r}
+
+us_states <- map_data("state")
+
+us_states_star <- left_join(us_states, data1, by = c("region" = "StateName"))
+
+p <- ggplot(data = us_states_star,
+            aes(x = long, y = lat,
+                group = group, fill = mean_rat))
+
+state_map <- p + geom_polygon(color = "gray90", size = 0.1) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_distiller(palette = "RdYlBu", direction = 1) +
+  labs(title = "Average Hospital Rating by State",
+       subtitle = "Scale: 1 to 5",
+       fill = "Average Rating",
+       caption = "Source: https://www.medicare.gov/hospitalcompare/search.html") +
+  theme_map()
+
+state_map
+
+```
+
+This version is much improved.  It provides a very clear picture of how hospitals are being rated at the state level.  It is immediately clear that New York, New Jersey, and Florida are not places I would want to be seen, while South Dakota, Wisconsin, and Nebraska seem to be favorable states to seek healthcare.  For a policy maker, this immediately raises questions about utilization rates of different populations, capacity, and state funding, which was the intended goal of this visualization.  That being said, this doesn't paint a full picture of the healthcare situation within each state.  As such, for the third plot, I decided to display average ratings at the county level.
+
+### Plot 3
+
+```{r}
+
+county_full <- left_join(county_map, county_data, by = "id")
+county_star <- left_join(county_full, data1b, by = c("name", "state"))
+
+county_map <- ggplot(data = county_star,
+       mapping = aes(x = long, y = lat,
+                     fill = mean_rat2, group = group)) +
+  geom_polygon(color = NA) +
+  coord_equal() +
+  scale_fill_distiller(palette = "RdYlBu", direction = 1, na.value = "gray90") +
+  labs(title = "Average Hospital Rating by County",
+       subtitle = "counties without data shown in gray",
+       fill = "Average Star Rating",caption = "Source: https://www.medicare.gov/hospitalcompare/search.html") +
+  theme_map() +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(legend.position = "bottom")
+
+county_map
+
+```
+
+I built this map with the assistance of the socviz.co website and county-level datafiles within the socviz library.  This third plot is an even better version, which when viewed sequentially after the second plot provides a much clearer picture of average hospital ratings in the U.S.  Immediately obvious is the fact that there are a lot of counties without hospital ratings (shown in gray) throughout the midwest and Alaska.  This is a function of the small, rural populations in these counties and the added challenge they face of receiving adequate healthcare in emergent situations.  Relatedly, the red/dark orange counties (low ratings) in Florida, California, New York, and parts of the south raise additional questions.  Are there enough doctors for the populations of interest?  Are there cultural factors impacting the rating system?  Are there emergent disease trends that hospitals have not yet adapted to treat?  These questions again highlight the value of a county-level view of this data.  Conversely, what is Rochester, MN doing right (home of the Mayo Clinic) that could be replicated elsewhere?  Relatedly, how are rural hospitals in central Idaho and northeastern Oregon scoring high marks?  For a final report, I would recommend the joint use of plot 2 and plot 3.

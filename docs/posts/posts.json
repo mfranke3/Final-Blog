@@ -1,0 +1,77 @@
+[
+  {
+    "path": "posts/2020-03-17-background/",
+    "title": "Background",
+    "description": "CMS Hospital Compare - what is it?",
+    "author": [
+      {
+        "name": "Mike Frankel",
+        "url": "https://github.com/mfranke3"
+      }
+    ],
+    "date": "2020-03-17",
+    "categories": [],
+    "preview": {},
+    "last_modified": "2020-03-17T14:45:22-07:00"
+  },
+  {
+    "path": "posts/2020-03-17-visualization-1/",
+    "title": "Visualization 1",
+    "description": "Average star rating mapped by state & county.",
+    "author": [
+      {
+        "name": "Mike Frankel",
+        "url": "https://github.com/mfranke3"
+      }
+    ],
+    "date": "2020-03-17",
+    "categories": [],
+    "preview": "posts/2020-03-17-visualization-1/visualization-1_files/figure-html5/unnamed-chunk-2-1.png",
+    "last_modified": "2020-03-17T16:19:33-07:00"
+  },
+  {
+    "path": "posts/2020-03-17-visualization-2/",
+    "title": "Visualization 2",
+    "description": "Comparison of CMS rating & patient ratings by state.",
+    "author": [
+      {
+        "name": "Mike Frankel",
+        "url": "https://github.com/mfranke3"
+      }
+    ],
+    "date": "2020-03-17",
+    "categories": [],
+    "preview": "posts/2020-03-17-visualization-2/visualization-2_files/figure-html5/unnamed-chunk-1-1.png",
+    "last_modified": "2020-03-17T16:14:46-07:00"
+  },
+  {
+    "path": "posts/2020-03-17-visualization-3/",
+    "title": "Visualization 3",
+    "description": "A short description of the post.",
+    "author": [
+      {
+        "name": "Mike Frankel",
+        "url": "https://github.com/mfranke3"
+      }
+    ],
+    "date": "2020-03-17",
+    "categories": [],
+    "preview": "posts/2020-03-17-visualization-3/visualization-3_files/figure-html5/unnamed-chunk-2-1.png",
+    "last_modified": "2020-03-17T16:47:12-07:00"
+  },
+  {
+    "path": "posts/welcome/",
+    "title": "Welcome to Final Project Website",
+    "description": "Welcome to our new blog, Final Project Website. We hope you enjoy \nreading what we have to say!",
+    "author": [
+      {
+        "name": "Nora Jones",
+        "url": "https://example.com/norajones"
+      }
+    ],
+    "date": "2020-03-17",
+    "categories": [],
+    "preview": {},
+    "last_modified": "2020-03-17T13:05:04-07:00"
+  }
+]

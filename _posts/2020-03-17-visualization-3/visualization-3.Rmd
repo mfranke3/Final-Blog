@@ -1,0 +1,145 @@
+---
+title: "Visualization 3"
+description: |
+  A short description of the post.
+author:
+  - name: Mike Frankel
+    url: https://github.com/mfranke3
+date: 03-17-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For my third and final visualization, I wanted to look at relationships between ratings and its composite measures.  For example, does nurse communication correlate highly with overall rating, or do cleanliness and quietness (i.e. hospital environment) matter in the assessment of how a hospital is rated?  
+
+My initial thought then was to approach this with a correlation matrix of scatterplots.  
+
+### Getting started
+
+The first step though was to load the requisite libraries and data file, ScatterFile, which contains the scores for each hospital in overall rating and ten other summary variables:
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(janitor)
+library(scales)
+library(gghighlight)
+library(colorspace)
+library(devtools)
+library(colorblindr)
+library(stringr)
+library(reshape2) # used for heat map
+
+data3 <- read_csv("ScatterFile.csv")
+
+data3filter <- data3 %>% select(`Facility ID`, State, `HCAHPS Question`, 
+                                `Patient Survey Star Rating`) %>%
+  pivot_wider(names_from = 'HCAHPS Question',
+              values_from = 'Patient Survey Star Rating')
+
+data3comp <- data3filter %>% group_by(State) %>% 
+  summarize(`Nurse communication` = mean(`Nurse communication - star rating`), 
+            `Doctor communication` = mean(`Doctor communication - star rating`),
+            `Staff responsiveness` = mean(`Staff responsiveness - star rating`),
+            `Medicine communication` = mean(`Communication about medicines - star rating`),
+            `Discharge info` = mean(`Discharge information - star rating`),
+            `Care transition` = mean(`Care transition - star rating`),
+            `Cleanliness` = mean(`Cleanliness - star rating`),
+            `Quietness` = mean(`Quietness - star rating`),
+            `Overall hospital rating` = mean(`Overall hospital rating - star rating`),
+            `Recommend hospital` = mean(`Recommend hospital - star rating`),
+            `Summary rating` = mean(`Summary star rating`))
+
+```
+
+### Plot 1
+
+Following is the firs plot, a scatter plot comparing nurse communication to summary rating
+
+```{r}
+
+ggplot(data3comp, aes(x = `Nurse communication`, y = `Summary rating`)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  coord_fixed() +
+  labs(title = "Scatter Plot",
+       x = "Nurse Communication",
+       y = "Summary Rating")
+
+```
+
+Once I ran looked at this scatterplot, I decided it would be cumbersome to build a full correlation matrix of scatterplots given the number of variables and overall positive relationships between the variables.  This would not be very meaningful to the viewer and would be a data overload.  The only take-away from this approach would be the confirmation that, yes, it appears that there is a strong positive relationship among all variables captured, but missing are the actual correlation values to distinguish degrees of correlation.  So for plot 2, I decided to build a heat map of the actual correlation matrix.
+
+### Plot 2
+
+To build this plot, I first had to build a correlation matrix and then turn it into a heat map using the melt function from the reshape2 library.
+
+```{r}
+
+# plot2 - correlation matrix heatmap from http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
+cordata <- data3comp[,c(2,3,4,5,6,7,8,9,12)]
+cormat <- round(cor(cordata),2)
+melted_cormat <- melt(cormat)
+
+ggplot(melted_cormat, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile()
+
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+upper_tri <- get_upper_tri(cormat)
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+```
+
+Graphically, this plot is much improved over the number of scatterplots equal to the number of tiles in this heat map.  This version though also is not optimal for a number of reasons.  First, there is too much information contained in the heatmap.  Relationships are repeated twice in a full square, when only a triangle would suffice.  The blues gradient color scheme does not provide enough difference in viewing to meaningfully distinguish among the variables.  The labels also need work to eliminate the overlap inherent in the x-axis.  Finally, without the actual correlation numbers, it is difficult to assess which relationships correlate the highest or least.  These critiques led me to the third and final plot below.
+
+### Plot 3
+
+```{r}
+
+corplot <- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_distiller(palette = "RdYlBu", direction = 1,
+                       name="Pearson Correlation") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 10, hjust = 1))+
+  coord_fixed() +
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 3) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.ticks = element_blank(),
+    legend.justification = c(1, 0),
+    legend.position = c(0.6, 0.7),
+    legend.direction = "horizontal") + 
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5)) +
+  labs(title = "Star Rating Variables Correlation Matrix")
+
+corplot
+
+```
+
+This final version cleans up the shortcomings identified above.  I experimented first with a red-white-blue gradient color scheme, but the colors were still too similar.  Using the divergent scheme shown as suggested by Daniel during my presentation is a much better view of the data.  Additionally, displaying the numbers plays well to a more technical hospital or policy maker audience.  
+
+Practically, it is clear that the quietness variable does not correlate strongly with the summary rating as compared to the other variables mapped.  This perhaps suggests that this variable could be dropped from the rating scheme or perhaps otherwise modified.  The strong relationships between variables suggests possible multicollinearity, which as a statistical problem suggests the need for further refinement to the hospital compare rating model.  

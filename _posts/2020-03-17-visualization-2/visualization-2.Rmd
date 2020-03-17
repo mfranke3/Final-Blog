@@ -1,0 +1,123 @@
+---
+title: "Visualization 2"
+description: |
+  Comparison of CMS rating & patient ratings by state.
+author:
+  - name: Mike Frankel
+    url: https://github.com/mfranke3
+date: 03-17-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For this visualization, I wanted to dig a little deeper into the nuances of the overall star rating system by state.  The StarRatingCompare file has hospital-level data averaged by state, similar to the file used for visualization 1.  This particular file, though, has an added variable of interest, the overall star rating recommended by patients as captured in patient survey data following discharge from a hospital stay.  This is of interest to hospitals and policy makers.  The guiding question then - is there a discrepancy between how patients and CMS rate a hospital?  If so, why?  Does one entity consistently rate hospitals higher than the other entity?   
+
+### Getting started
+
+Following are the libraries used and data wrangling I did to prepare the file for plotting:
+
+```{r plot 2 - comparing government rating to patient rating}
+
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(janitor)
+library(scales)
+library(colorspace)
+library(devtools)
+library(colorblindr)
+library(stringr)
+
+data2 <- read_csv("StarRatingCompare.csv")
+
+data2filter <- data2 %>% select(FacilityID, State, HCAHPSQuestion, PatientSurveyStarRating) %>%
+  pivot_wider(names_from = HCAHPSQuestion, 
+              values_from = PatientSurveyStarRating)
+
+data2comp <- data2filter %>% group_by(State) %>% 
+  summarize(mean_rat = mean(`Summary star rating`), 
+            mean_rec = mean(`Recommend hospital - star rating`))
+
+data2comp <- data2comp %>%
+  pivot_longer(starts_with("mean"), 
+               names_to = "Question", 
+               values_to = "Rating")
+
+```
+
+
+### Plot 1
+For the first plot, I wanted to mirror a plot I liked from our first homework assignment, using geom_line and geom_point to display continuous measures compared across some factor.  In this case, I am comparing CMS hospital ratings and patient hospital ratings averaged by state.  
+
+```{r}
+mean_compare_plot <- ggplot(data2comp, aes(fct_reorder(State, desc(State)), Rating)) +
+  geom_line(aes(group = State), color = "gray40", size = 1) +
+  geom_point(aes(color = Question)) +
+  coord_flip() +
+  labs(title = "Comparison of Mean State Hospital Star Ratings by Patients and CMS",
+       subtitle = "Scale: 1 to 5",
+       x = "", y = "Star Rating",
+       fill = "Rater",
+       caption = "Source: https://www.medicare.gov/hospitalcompare/search.html") +
+  scale_color_discrete(name = "Rater",
+                       breaks = c("mean_rat", "mean_rec"),
+                       labels = c("CMS", "Patient")) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 6))
+
+mean_compare_plot
+
+```
+
+The different colored points depict the two rating entities and the line depicts the gap between their ratings.  Problematic in this plot after wrangling the data was formatting the figure itself.  my state labels are too close to each other to the point of overlapping.  The tight squeeze on the y-axis makes it difficult to interpret individual states.
+
+On the positive side though, is the clear view that there is indeed a discepancy in ratings between entities across all states, with the gap smaller in some cases than others.  Apparent with more cognitive effort to the viewer is that the directions differ by state.  In other words, neither CMS nor the patient is consistently more generous in ratings than others.
+
+### Plot 2
+
+For the second plot, my peer reviewers suggested adding different colored lines to distinuish between which entity rated hospitals higher for reach state.  To do this, I first had to do more data wrangling:
+
+```{r}
+
+data2comp2 <- data2comp %>%
+  pivot_wider(
+    names_from = Question,
+    values_from = Rating
+  ) %>%
+  mutate(CMS = mean_rat,
+         Patient = mean_rec) %>%
+  mutate(`Higher Rating` = ifelse(mean_rec > mean_rat, "Patient", "CMS")) %>%
+  pivot_longer(
+    cols = c(CMS, Patient),
+    names_to = "Question",
+    values_to = "Rating")
+
+```
+
+Following is the final version of this visualization:
+
+```{r fig.height = 8, fig.width = 7}
+
+mean_compare_plot2 <- ggplot(data2comp2, aes(fct_reorder(State, desc(State)), Rating)) +
+  geom_line(aes(color = `Higher Rating`), size = 1) +
+  geom_point(aes(color = NA, fill = Question), shape = 21, stroke = 0, size = 2) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Paired") +
+  theme_minimal() +
+  labs(title = "Comparison of Mean State Hospital Star Ratings by Patients and CMS",
+       subtitle = "Scale: 1 to 5",
+       x = "", y = "Star Rating",
+       fill = "Rater",
+       caption = "Source: https://www.medicare.gov/hospitalcompare/search.html")
+
+mean_compare_plot2
+
+```
+
+Using chunk options, I was able to modify the figure display heights and widths.  This enabled me to spread out the distance between the states and make them interpretable.  Also, the colors of the lines allowed for a much easier interpretation of the higher-rating entity.  What generally appears to be the case is that CMS is more generous than hospitals are.  This isn't true in a significant number of states though.  Why are Californian patients so much more generous on their hospital ratings compared to the CMS rating than any other state, and why are Kentucky patients so much more harsh?  A glaring limitation of this visualization is that the number of hospitals rated are not displayed.  That third variable would give a lot more context to this phenomenon.  If so, the small sample size for Wyoming could explain the discrepancy.  However, this is debunked by neighboring and nearly as small population Montana's smaller gap.  At the other extreme, we see a lot of variation in the populous state of California, but nearly no variation in the populous state of New York.  As such, I chose to omit the added complexity this third variable would permit.  Suffice it to say that there is indeed a gap in state rating entities nation-wide worthy of furthere exploration.

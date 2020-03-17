@@ -1,0 +1,39 @@
+---
+title: "Background"
+description: |
+  CMS Hospital Compare - what is it?
+author:
+  - name: Mike Frankel
+    url: https://github.com/mfranke3
+date: 03-17-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+The data for this project comes from the Center for Medicare & Medicaid Services' (CMS) Hospital Compare website accessible at: <https://www.medicare.gov/hospitalcompare/search.html?>.
+
+Hospital Compare includes information about the quality of care provided at over 4,000 Medicare-certified hospitals, including 130 Veterans Affairs medical centers.  The intent of this site is to assist patients in deciding where to get healthcare and to encourage hospitals to improve the quality of care offered through transparency in various metrics and surveys of their performance.
+
+Hospital Compare is the result of joint efforts between CMS, consumers, hospitals, doctors, employers, accrediting organizations, and federal agencies.  Cross-sectional .csv files are published quarterly with information at the hospital, county, state, and national level.
+
+## Available Information
+
+The following categories are examples of the data available on the Hospital Compare website:
+
+- Overall hospital rating: star rating, scale 1 to 5, as composite of different measures
+- General information: hospital name, address, type, etc.
+- Survey of patient experiences: patient experience after recent discharge, including perceptions of doctors and nurses
+- Timely & effective care: Timeliness in administering treatments & outpatient medical imaging tests (e.g. MRI, CT)
+- Complications & deaths: likelihood of complications while in hospital or death within 30 days of discharge
+- Unplanned hospital visits: length of readmissions
+- Psychiatric unit services: psychiatric care quality – screening, substance use treatment, patient safety, follow-up
+- Payment & value of care: comparison of value of care provided to all hospitals nationally
+
+## Audience & Visualizations
+
+This project contains three different visualizations intended to communicate summary-level information on hospital ratings to patients, hospitals, and policy makers.  The overall intent behind the visualizations is to spark conversations about how hospitals aggregated at the state and county levels were performing as of October 30, 2019, where improvement efforts should be concentrated, and which areas were performing the best - areas for uncovering potential "best practices" for replication.
